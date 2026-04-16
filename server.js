@@ -24,14 +24,14 @@ app.get('/students', (req, res) => {
 
 /* CREATE STUDENT */
 app.post('/students', (req, res) => {
-  const { first_name, last_name, email } = req.body;
+  const { first_name, last_name, email, password } = req.body;
 
   const sql = `
-    INSERT INTO students (first_name, last_name, email)
-    VALUES (?, ?, ?)
+    INSERT INTO students (first_name, last_name, email, password)
+    VALUES (?, ?, ?, ?)
   `;
 
-  db.query(sql, [first_name, last_name, email], (err, result) => {
+  db.query(sql, [first_name, last_name, email, password], (err, result) => {
     if (err) return res.status(500).send(err);
     res.json({ message: 'Student created', id: result.insertId });
   });
@@ -103,6 +103,33 @@ app.get('/student/:id', (req, res) => {
     if (err) return res.status(500).send(err);
 
     res.json(result[0]);
+  });
+});
+
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+
+  const sql = "SELECT * FROM students WHERE email = ?";
+
+  db.query(sql, [email], (err, result) => {
+    if (err) return res.status(500).json(err);
+
+    if (result.length === 0) {
+      return res.status(401).json({ error: "Usuario no existe" });
+    }
+
+    const user = result[0];
+
+    // ⚠️ Comparación simple (para proyecto)
+    if (user.password !== password) {
+      return res.status(401).json({ error: "Contraseña incorrecta" });
+    }
+
+    res.json({
+      message: "Login exitoso",
+      student_id: user.student_id,
+      email: user.email
+    });
   });
 });
 
